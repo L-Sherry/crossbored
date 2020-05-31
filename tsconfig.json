@@ -1,0 +1,19 @@
+{
+	"files": [
+		"ultimate-crosscode-typedefs/impact-class-system-correct.d.ts",
+		"ultimate-crosscode-typedefs/crosscode.d.ts",
+		"more-crosscode.d.ts",
+		"meta.d.ts",
+		"plugin.ts"
+	],
+	"compilerOptions": {
+		"outDir": ".",
+		"inlineSourceMap": true,
+		"strict": true,
+		"target": "es2017",
+		"module": "es2015",
+		"allowJs": false,
+		"forceConsistentCasingInFileNames": true,
+		"noResolve": true
+	}
+}
