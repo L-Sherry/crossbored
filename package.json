@@ -1,0 +1,7 @@
+{
+	"name": "Crossbored",
+	"license:": "MIT",
+	"description": "Adds a new quest... i hope.  someday...",
+	"plugin": "plugin.js",
+	"version": "0.0.1-broken"
+}

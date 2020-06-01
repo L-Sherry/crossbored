@@ -37,8 +37,10 @@ declare namespace ig {
 		setRotate: (angle: number) => this;
 		setPivot: (x: number, y: number) => this;
 	}
-	// ???
-	let KEY_SPLINES: KEY_SPLINES;
+}
+
+declare interface Window {
+	KEY_SPLINES: KEY_SPLINES;
 }
 
 declare interface Number {

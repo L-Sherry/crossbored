@@ -19,9 +19,8 @@ function injekt_mir<
 	name: Hinweis,
 	umhulle: (this: KlassTyp,
 		  altern: (...args : Args) => Return,
-		  ...args: Args) => Return 
+		  ...args: Args) => Return
 ): void {
-	
 	const alte
 		: (this: KlassTyp, ...args : Args) => Return
 		= objekt[name];
@@ -67,13 +66,14 @@ declare interface TotlichenLinie extends ig.GuiElementBase {
 	init: () => void;
 };
 
-const totlichenlinie = () =>
-	ig.GuiElementBase.extend({
+const totlichenlinie
+	: () => IGConstructor<TotlichenLinie>
+	= () => ig.GuiElementBase.extend({
 		pattern: null,
 		settings: {
 			gradientSize: 80,
 			gradientTimer: 0.5,
-			lineSize: 10,
+			lineSize: 4,
 			lineTimer: 0.5,
 			lineRotation: 2 * Math.PI * 2.3,
 			lineInitialScale: 2,
@@ -84,7 +84,8 @@ const totlichenlinie = () =>
 		// Filling pixels with R = G = B = Math.round(x / width * 255)
 		// is waaay too ugly when the width is more than 256.
 		// yes, your image editor does dithering. just like opengl.
-		init: function(this: TotlichenLinie) {
+		init: function() {
+			this.parent();
 			// shameless rip
 			const i = ig.MessageOverlayGui.BottomShadow;
 			if (!i.pattern)
@@ -94,47 +95,72 @@ const totlichenlinie = () =>
 				= this.settings.gradientSize / 128;
 			this.timer = 0;
 		},
-		update: function(this: TotlichenLinie) {
+		update: function() {
 			this.timer += ig.system.tick;
 		},
 
-		updateDrawablesAnfang: function(this: TotlichenLinie,
-						g: ig.GuiRenderer) {
+		updateDrawablesAnfang: function(g : ig.GuiRenderer) {
 			const settings = this.settings;
 			// Typescript.  this is like... A NEW LANGUAGE !
 			const bis = -settings.gradientSize;
 			const zum = (ig.system.height - settings.lineSize) / 2;
-			const oben = this.timer.map(0, settings.gradientTimer,
-						    bis, zum);
+			let oben = this.timer.map(0, settings.gradientTimer,
+						  bis, zum);
 			if (oben > 0) {
 				g.addColor("black", 0, 0,
 					   ig.system.width, oben);
-				g.addColor("black", ig.system.height - oben, 0,
+				g.addColor("black", 0, ig.system.height - oben,
 					   ig.system.width, oben);
 			}
-			// fucking patterns, how do they work 
+			// fucking patterns, how do they work
 			const massstab = settings.gradientScale;
-			g.addTransform().setScale(1, -massstab);
 
-			let quellhohe = 128;
+			let quellhohe = 128, vonY = 0;
 			let unten = oben + settings.gradientSize;
-			if (unten > zum)
-				quellhohe = (unten-zum)/massstab;
+			if (unten > zum) {
+				vonY = (unten-zum)/massstab;
+				quellhohe = 128 - vonY;
+				unten = zum;
+			} else if (oben < 0) {
+				//vonY = -oben / massstab;
+				//quellhohe = 128 - vonY;
+				//oben = 0;
+			}
+
+			g.addTransform().setTranslate(0,
+						      ig.system.height - unten)
+					.setScale(1, massstab);
+			g.addPattern(this.pattern,
+				     0, 0,
+				     0, vonY,
+				     ig.system.width, quellhohe);
+			g.undoTransform();
+
+			g.addTransform().setTranslate(0, unten)
+					.setScale(1, -massstab);
+			g.addPattern(this.pattern,
+				     0, 0,
+				     0, vonY,
+				     ig.system.width, quellhohe);
+			g.undoTransform();
+/*
+			g.addTransform().setPivot(0, ).setScale(1, -massstab);
+
+
 
 			g.addPattern(this.pattern,
-				     0, oben, 0, 0,
+				     0, oben, 0, vonY,
 				     ig.system.width, quellhohe);
 
-			g.undoTransform();
 			g.addTransform().setScale(1, massstab);
 
 			g.addPattern(this.pattern,
-				     0, ig.system.height - unten, 0, 0,
+				     0, ig.system.height - oben,
+				     0, vonY,
 				     ig.system.width, quellhohe);
-			g.undoTransform();
+			g.undoTransform();*/
 		},
-		updateDrawablesEnde: function(this: TotlichenLinie,
-					      g: ig.GuiRenderer) {
+		updateDrawablesEnde: function(g: ig.GuiRenderer) {
 			const settings = this.settings;
 			// color me blind
 			g.addColor("black", 0, 0,
@@ -143,7 +169,9 @@ const totlichenlinie = () =>
 			const quotient
 				= ((this.timer - settings.gradientTimer)
 				    / settings.lineTimer);
-			const leichtaus = ig.KEY_SPLINES.EASE_OUT.get(quotient);
+
+			const leichtausfunk = window.KEY_SPLINES.EASE_OUT;
+			const leichtaus = leichtausfunk.get(quotient);
 
 			const massstab = (1 - leichtaus);
 			const rotieren = quotient * settings.lineRotation;
@@ -166,11 +194,11 @@ const totlichenlinie = () =>
 				   weite, settings.lineSize);
 			g.undoTransform();
 		},
-		updateDrawables: function(this: TotlichenLinie,
-					  g: ig.GuiRenderer) {
+		updateDrawables: function(g: ig.GuiRenderer) {
 			if (this.timer < this.settings.gradientTimer)
 				this.updateDrawablesAnfang(g);
-			else if (this.timer < this.settings.lineTimer)
+			else if (this.timer < (this.settings.gradientTimer
+					       + this.settings.lineTimer))
 				this.updateDrawablesEnde(g);
 		}
 	});
@@ -191,6 +219,7 @@ class DasKampfsystem {
 				      () => {
 			this.TotlichenLinie = totlichenlinie();
 		});
+		(window as any).kampfsystem = this;
 	};
 }
 
@@ -199,6 +228,6 @@ export default class Velssystem {
 		// impact_go_brrrr();
 	}
 	postload() : void {
-
+		DasKampfsystem.bind_to_game();
 	}
 }
