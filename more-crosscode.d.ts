@@ -40,3 +40,8 @@ declare namespace ig {
 	// ???
 	let KEY_SPLINES: KEY_SPLINES;
 }
+
+declare interface Number {
+	map(from_range_begin: number, from_range_end: number,
+	    to_range_begin: number, to_range_end: number) : number;
+}
