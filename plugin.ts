@@ -61,6 +61,7 @@ declare interface TotlichenLinie extends ig.GuiElementBase {
 		lineStartColor: ig.RGBColor;
 		lineEndColor: ig.RGBColor;
 	}
+	start: () => void;
 	updateDrawablesAnfang: ig.GuiElementBase["updateDrawables"];
 	updateDrawablesEnde: ig.GuiElementBase["updateDrawables"];
 	init: () => void;
@@ -72,11 +73,12 @@ const totlichenlinie
 		pattern: null,
 		settings: {
 			gradientSize: 80,
-			gradientTimer: 0.5,
-			lineSize: 4,
-			lineTimer: 0.5,
-			lineRotation: 2 * Math.PI * 2.3,
-			lineInitialScale: 2,
+			gradientTimer: 1,
+			pauseTimer: 0.3,
+			lineSize: 8,
+			lineTimer: 1.5,
+			lineRotation: 2 * Math.PI * 1.5,
+			lineInitialScale: 1.5,
 			lineStartColor: new ig.RGBColor("white"),
 			lineEndColor: new ig.RGBColor("black")
 		},
@@ -94,6 +96,10 @@ const totlichenlinie
 			this.settings.gradientScale
 				= this.settings.gradientSize / 128;
 			this.timer = 0;
+			// FIXME: ablenk am starten
+		},
+		start: function() {
+			this.timer = 0;
 		},
 		update: function() {
 			this.timer += ig.system.tick;
@@ -104,14 +110,20 @@ const totlichenlinie
 			// Typescript.  this is like... A NEW LANGUAGE !
 			const bis = -settings.gradientSize;
 			const zum = (ig.system.height - settings.lineSize) / 2;
-			let oben = this.timer.map(0, settings.gradientTimer,
-						  bis, zum);
+			const quotient = this.timer / settings.gradientTimer;
+			let oben = Math.ceil(quotient * (zum - bis) + bis);
 			if (oben > 0) {
 				g.addColor("black", 0, 0,
 					   ig.system.width, oben);
 				g.addColor("black", 0, ig.system.height - oben,
 					   ig.system.width, oben);
 			}
+			const alphaOben = Math.max(oben, 0);
+			g.addColor(`rgb(255,255,255,${quotient})`,
+				   0, alphaOben,
+				   ig.system.width,
+				   ig.system.height - 2 * alphaOben);
+
 			// fucking patterns, how do they work
 			const massstab = settings.gradientScale;
 
@@ -167,8 +179,9 @@ const totlichenlinie
 				   ig.system.width, ig.system.height);
 			// now, let's draw the awesomest line
 			const quotient
-				= ((this.timer - settings.gradientTimer)
-				    / settings.lineTimer);
+				= ((this.timer - settings.gradientTimer
+				    - settings.pauseTimer)
+				    / settings.lineTimer).limit(0, 1);
 
 			const leichtausfunk = window.KEY_SPLINES.EASE_OUT;
 			const leichtaus = leichtausfunk.get(quotient);
@@ -198,6 +211,7 @@ const totlichenlinie
 			if (this.timer < this.settings.gradientTimer)
 				this.updateDrawablesAnfang(g);
 			else if (this.timer < (this.settings.gradientTimer
+					       + this.settings.pauseTimer
 					       + this.settings.lineTimer))
 				this.updateDrawablesEnde(g);
 		}
