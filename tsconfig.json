@@ -1,8 +1,8 @@
 {
 	"files": [
-		"ultimate-crosscode-typedefs/impact-class-system-correct.d.ts",
-		"ultimate-crosscode-typedefs/crosscode.d.ts",
-		"more-crosscode.d.ts",
+		"./ultimate-crosscode-typedefs/impact-class-system-correct.d.ts",
+		"./ultimate-crosscode-typedefs/impact-core.d.ts",
+		"./ultimate-crosscode-typedefs/modules/__all__.d.ts",
 		"meta.d.ts",
 		"plugin.ts"
 	],
@@ -11,9 +11,8 @@
 		"inlineSourceMap": true,
 		"strict": true,
 		"target": "es2017",
-		"module": "es2015",
+		"module": "esnext",
 		"allowJs": false,
-		"forceConsistentCasingInFileNames": true,
-		"noResolve": true
+		"forceConsistentCasingInFileNames": true
 	}
 }

@@ -4,3 +4,5 @@ type DeducedConstructorForIgClass<IgClassLike extends {init: any}>
 
 type IGConstructor<IgClassLike extends {init: any}>
 	= ImpactClass<IgClassLike> & DeducedConstructorForIgClass<IgClassLike>;
+
+export { IGConstructor };

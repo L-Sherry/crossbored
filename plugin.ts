@@ -1,4 +1,4 @@
-
+import type { IGConstructor } from "./meta";
 // Typescript.  this is like... EIN NEUE SPRACHE !
 
 const machen_mir_ein_module = (name: string, deps : string[],
