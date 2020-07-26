@@ -120,7 +120,22 @@ const RundeBasiertPartyMitgleid : Constructor = sc.PlayerBaseEntity.extend({
 				= sc.party.getPartyMemberModel(partyMemberName);
 		this.animSheet = this.model.animSheet;
 		this.proxies = this.model.getBalls();
-		this.storeWalkAnims("battle", this.model.walkAnims.battle);
+		this.params = this.model.params;
+		// man braucht es für status effekt ?
+		// this.params.setCombatant(this);
+
+		// nur im PartyMemberModel
+		for (const laufAnim in this.model.walkAnims)
+			this.storeWalkAnims(laufAnim,
+					    this.model.walkAnims[laufAnim]);
+		// der Spieler benutzt die vorgabenmässig walkAnims, und die
+		// vorgabenmäsig walkAnims.battle.idle ist 'idle'...
+		// aber combatIdle is toll ! ... war toll, jetzt ist es kaputt.
+		// aber es war toll beim mein arbeit mit nightmarsh...
+		if (!this.model.walkAnims
+		    && this.animSheet.hasAnimation("guard"))
+			this.storedWalkAnims.battle.idle = "guard";
+
 		this.setDefaultConfig(this.configs.battle);
 		this.initAnimations();
 		this.setAttribute("dashDir", {x:-1, y:0});
