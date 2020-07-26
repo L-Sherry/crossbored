@@ -4,6 +4,7 @@
 		"./ultimate-crosscode-typedefs/impact-core.d.ts",
 		"./ultimate-crosscode-typedefs/modules/__all__.d.ts",
 		"meta.d.ts",
+		"effekt.ts",
 		"plugin.ts"
 	],
 	"compilerOptions": {
