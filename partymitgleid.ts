@@ -79,9 +79,34 @@ interface RundeBasiertPartyMitgleidOptionen extends ig.Entity.Settings {
 	partyMemberName: string
 }
 
+declare global {
+	namespace ig.ACTION_STEP {
+		interface WAIT {
+			rundeBasiertZeit?: number
+		}
+	}
+}
+
+ig.ACTION_STEP.WAIT.inject({
+	start: function(entity: ig.ActorEntity) {
+		const alteTrittTimer = entity.stepTimer;
+		this.parent(entity);
+		if (this.rundeBasiertZeit !== undefined
+		    && entity instanceof RundeBasiertPartyMitgleid) {
+			(entity.stepData as {time:number}).time
+				= this.rundeBasiertZeit;
+			entity.stepTimer
+				= alteTrittTimer + this.rundeBasiertZeit;
+		}
+	}
+});
+
 type RundeBasiertPartyMitgleidConstructor
 	= IGConstructor<RundeBasiertPartyMitgleid>;
 type Constructor = RundeBasiertPartyMitgleidConstructor;
+
+type SpielerAktionBlockTyp
+	= keyof ig.ACTION_STEP.SET_PLAYER_ACTION_BLOCK["blockData"];
 
 const RundeBasiertPartyMitgleid : Constructor = sc.PlayerBaseEntity.extend({
 	init: function(x : number, y : number, z : number,
@@ -155,6 +180,48 @@ const RundeBasiertPartyMitgleid : Constructor = sc.PlayerBaseEntity.extend({
 		while (i --> 0)
 			this.pushInlineAction(aktionen[i], true, false);
 	},
+	senkAktionZeit: function(aktion: ig.Action,
+				 blockTyp: SpielerAktionBlockTyp) {
+		let blockZeit = 0;
+		const zeitTritts : ig.ACTION_STEP.WAIT[] = [];
+		//const zufälligZeitTritts: ig.ACTION_STEP.WAIT_RANDOM[] = [];
+		// kein zweig unterstuzung
+		let tritt : ig.ActionStepBase | null = aktion.rootStep;
+		while (tritt !== null) {
+			if (tritt instanceof ig.ACTION_STEP.WAIT) {
+				if (tritt.time.constructor === Number)
+					zeitTritts.push(tritt);
+			//else if (tritt instanceof ig.ACTION_STEP.WAIT_RANDOM)
+			//	zufälligZeitTritts.push(tritt);
+			} else if (tritt instanceof
+					 ig.ACTION_STEP.SET_PLAYER_ACTION_BLOCK)
+				blockZeit += tritt.blockData[blockTyp] || 0;
+			tritt = tritt._nextStep;
+		}
+		if (blockZeit == 0 || zeitTritts.length == 0)
+			return;
+		const zeitVonTritt = (tritt : ig.ACTION_STEP.WAIT) =>
+			tritt.time === -1 ? 1e3 : tritt.time as number;
+		// -1 ist endlos erwartung
+		let totalZeit : number
+			= zeitTritts.reduce((a,t) => a + zeitVonTritt(t), 0);
+		if (totalZeit <= blockZeit)
+			return;
+		zeitTritts.sort((a,b) => zeitVonTritt(b) - zeitVonTritt(a));
+		let i = zeitTritts.length;
+		while (i --> 0) {
+			const tritt = zeitTritts[i];
+
+			totalZeit -= zeitVonTritt(tritt);
+			if (totalZeit > blockZeit) {
+				tritt.rundeBasiertZeit = 0;
+			} else {
+				tritt.rundeBasiertZeit = blockZeit - totalZeit;
+				totalZeit += tritt.rundeBasiertZeit;
+				break;
+			}
+		}
+	},
 	vorbereitAktion: function(aktionenAlsString: string[],
 				  elementModus : sc.ELEMENT)
 			 : ig.Action[] | null {
@@ -186,9 +253,10 @@ const RundeBasiertPartyMitgleid : Constructor = sc.PlayerBaseEntity.extend({
 			if (!igAktion)
 				igAktion = this.model.baseConfig.getAction(id);
 
-			if (igAktion)
+			if (igAktion) {
+				this.senkAktionZeit(igAktion, 'action');
 				aktionen.push(igAktion);
-			else if (!optional)
+			} else if (!optional)
 				return null;
 		}
 		return aktionen;
