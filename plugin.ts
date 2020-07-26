@@ -1,5 +1,6 @@
 import type { IGConstructor } from "./meta";
 import type { TotlichenLinieConstructor } from "./effekt";
+import type { RundeBasiertPartyMitgleidConstructor } from "./partymitgleid";
 // Typescript.  this is like... EIN NEUE SPRACHE !
 
 const machen_mir_ein_module = (name: string, deps : string[],
@@ -48,22 +49,59 @@ function injekt_mir<
 	objekt[name] = neues;
 }
 
+declare namespace ig.ACTION_STEP {
+	interface KAMPFSYSTEM_AKTION_AM_ENDE {}
+	interface KAMPFSYSTEM_AKTION_AM_ENDE_KONSTRUKTOR {
+		new (optionen: {tag: string}): KAMPFSYSTEM_AKTION_AM_ENDE
+	}
+	var KAMPFSYSTEM_AKTION_AM_ENDE: KAMPFSYSTEM_AKTION_AM_ENDE_KONSTRUKTOR;
+}
+
+const feststellekampfsystem = () => {
+	ig.ACTION_STEP.KAMPFSYSTEM_AKTION_AM_ENDE = window.ig.ActionStepBase.extend({
+		init: function(settings : {tag: string}) {
+			this.tag = settings.tag;
+		},
+		start: function(locals: unknown) {
+			/*
+			sc.crossbored_kampf_system.actionAmEnde(this.tag);
+			*/
+			console.log(`${this.tag} finished`);
+		}
+	});
+};
 
 class DasKampfsystem {
 	static effekt : { TotlichenLinie: TotlichenLinieConstructor } | null
 		= null;
+	static partymitgleid : {
+		RundeBasiertPartyMitgleid: RundeBasiertPartyMitgleidConstructor
+	} | null = null;
 	constructor() {
 	};
 	static bind_to_game() {
+		machen_mir_ein_module("crossbored.steps",
+				      ["impact.base.action"],
+				      feststellekampfsystem);
 		machen_mir_ein_module("crossbored.stupidanimation",
 				      ["game.feature.msg.gui.message-overlay",
 				       "impact.base.utils" /* RGBColor */],
 				      async () => {
 			this.effekt = await import("./effekt.js");
 		});
+
+		machen_mir_ein_module("crossbored.roundbasedpartymember",
+				      ["game.feature.player.entities."
+				       +"player-base",
+				       "crossbored.steps"], async () => {
+			this.partymitgleid = await import("./partymitgleid.js");
+		});
+
 		(window as any).kampfsystem = this;
 	};
 }
+
+
 
 export default class Velssystem {
 	prestart() : void {

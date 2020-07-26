@@ -5,6 +5,7 @@
 		"./ultimate-crosscode-typedefs/modules/__all__.d.ts",
 		"meta.d.ts",
 		"effekt.ts",
+		"partymitgleid.ts",
 		"plugin.ts"
 	],
 	"compilerOptions": {
